@@ -37,7 +37,7 @@ def admin_panel(message):
 
 # @bot.message_handler(func=lambda message=True)
 # def handle_message(message):
-#     user_message[]
+#     user_message[] =
 
 
 bot.infinity_polling()
