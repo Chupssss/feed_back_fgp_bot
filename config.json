@@ -3,5 +3,6 @@
   "admins": [
     "user_1",
     "user_2"
-  ]
+  ],
+  "bot_name": "NAME"
 }
