@@ -42,6 +42,6 @@ def connect_to_user(message):
         return
 
     try:
-        # user_id = int(message.text.split()[1])
+        #user_id = int(message.text.split()[1])
 
 bot.infinity_polling()
