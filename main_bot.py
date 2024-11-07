@@ -5,39 +5,43 @@ import json
 with open("config.json", "r") as config_file:
     config = json.load(config_file)
 
-with open("user_messages.json", "r") as user_messages_file:
-    user_messages = json.load(user_messages_file)
+with open("tickets.json", "r") as tickets_file:
+    tickets = json.load(tickets_file)
+
 
 bot = telebot.TeleBot(config["API_token"])
 
-def is_admin(user_id):
-    if user_id in config["admins"]:
-        return 1
+
+def save_ticket():
+    with open("tickets.json", "w") as file:
+        json.dump(tickets, file)
+
+
+@bot.message_handler(func=lambda message: True)
+def handle_user_message(message):
+    user_id = message.from_user.id
+    username = message.from_user.username or message.from_user.first_name
+
+    if user_id not in tickets or not tickets[user_id]["status"]:
+        tickets[user_id] = {"status": True, "admin": None}
+        save_ticket()
+        bot.reply_to(message, "Ваш запрос отправлен. Ожадайте ответа администратора.")
+        for admins in config["adimns"]:
+            bot.send_message(admins, f"Открыто новое обращение от {username}\nID: {user_id}.\nЧтобы подключиться к чату, используйте команду /connect {user_id}")
+    elif tickets[user_id]["admin"] in config["admins"]:
+        connected_admin = tickets[user_id]["admin"]
+        bot.send_message(connected_admin, message.text)
     else:
-        return 0
+        bot.reply_to(message, "Ваш запрос отправлен. Ожадайте ответа администратора.")
 
-def save_user_message(message):
+
+@bot.message_handler(commands=["connect"])
+def connect_to_user(message):
+    if message.from_user.id not in config["admins"]:
+        bot.reply_to(message, "Вы не обладаете правами администратора.")
+        return
+
     try:
-        with open("user_messages.json", "w") as f:
-            json.dump(message, f, indent=4)
-    except Exception as e:
-        print(f"Ошибка при сохранении данных пользователя: {str(e)}")
-
-
-@bot.message_handler(commands=["start"])
-def start_message(message):
-    bot.send_message(message.chat.id, "Приветсвую! Напишите мне свою просьбу/вопрос/предложение, и я отправлю его администрации!")
-    bot.send_message(message.chat.id,"С прочей информацией вы можете ознакомиться с помощью команды /help ")
-
-@bot.message_handler(commands=["admin"])
-def admin_panel(message):
-    if is_admin(message.chat.id):
-        bot.send_message(message.chat.id, "Вы успешно авторизовались в админ-панель!")
-
-
-# @bot.message_handler(func=lambda message=True)
-# def handle_message(message):
-#     user_message[] =
-
+        # user_id = int(message.text.split()[1])
 
 bot.infinity_polling()
