@@ -1,4 +1,4 @@
-echo "Restarting bot..."
+echo "Restarting bot...."
 
 pid=`ps -ef | grep main_bot.py | grep -v grep | awk '{print $2}'`
 
