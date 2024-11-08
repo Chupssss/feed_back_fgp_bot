@@ -17,24 +17,6 @@ def save_ticket():
         json.dump(tickets, file, indent=4)
 
 
-@bot.message_handler(func=lambda message: True)
-def handle_user_message(message):
-    user_id = message.from_user.id
-    username = message.from_user.username or message.from_user.first_name
-    if user_id not in config["admins"]:
-        if user_id not in tickets or not tickets[user_id]["status"]:
-            tickets[user_id] = {"status": True, "admin": None}
-            save_ticket()
-            bot.reply_to(message, "Ваш запрос отправлен. Ожадайте ответа администратора.")
-            for admins in config["admins"]:
-                bot.send_message(admins, f"Открыт новый тикет от {username}\nid: {user_id}.\nЧтобы подключиться к чату, используйте команду /connect {user_id}")
-        elif tickets[user_id]["admin"] in config["admins"]:
-            connected_admin = tickets[user_id]["admin"]
-            bot.send_message(connected_admin, message.text)
-        else:
-            bot.reply_to(message, "Ваш запрос отправлен. Ожадайте ответа администратора.")
-
-
 @bot.message_handler(commands=["connect"])
 def connect_to_ticket(message):
     if message.from_user.id not in config["admins"]:
@@ -43,12 +25,12 @@ def connect_to_ticket(message):
 
     try:
         user_id = int(message.text.split()[1])
-        if user_id in tickets and tickets[user_id]["status"] and tickets[user_id]["admin"] == None:
-            tickets[user_id] = {"status": True, "admin": message.from_user.id}
+        if str(user_id) in tickets and tickets[str(user_id)]["status"] and tickets[str(user_id)]["admin"] == None:
+            tickets[str(user_id)] = {"status": True, "admin": message.from_user.id}
             save_ticket()
             bot.send_message(message.from_user.id, f"Вы успешно подключены к тикету {user_id}.")
             bot.send_message(user_id, "Вам отвечает Администратор.")
-        elif user_id in tickets and tickets[user_id]["admin"] != None:
+        elif str(user_id) in tickets and tickets[str(user_id)]["admin"] != None:
             bot.send_message(message.from_user.id, f"Другой администратор уже занялся тикетом id: {user_id}.")
         else:
             bot.send_message(message.from_user.id, "Тикет для данного пользователя не найден или уже закрыт.")
@@ -64,8 +46,8 @@ def close_ticket(message):
 
     try:
         user_id = int(message.text.split()[1])
-        if user_id in tickets and tickets[user_id]["status"] and tickets[user_id]["admin"] == message.from_user.id:
-            tickets[user_id] = {"status": False, "admin": None}
+        if str(user_id) in tickets and tickets[str(user_id)]["status"] and tickets[str(user_id)]["admin"] == message.from_user.id:
+            tickets[str(user_id)] = {"status": False, "admin": None}
             save_ticket()
             bot.send_message(message.from_user.id, f"Тикет пользователя {user_id} закрыт.")
             bot.send_message(user_id,"Спасибо за обращение! Если нужна помощь, напишите сюда снова!")
@@ -75,15 +57,38 @@ def close_ticket(message):
         bot.send_message(message.from_user.id,"Пожалуйста, укажите корректный id пользователя. Пример: /connect <user_id>")
 
 
-@bot.message_handler(func=lambda message: message.from_user.id in config["admins"] and message.reply_to_message)
+@bot.message_handler(func=lambda message: message.from_user.id in config["admins"])
 def admin_reply_to_user(message):
-    try:
-        user_id = int(message.reply_to_message.text.split("ID: ")[1].split(")")[0])
-        if tickets.get(user_id, {}).get("admin") == message.from_user.id:
-            bot.send_message(user_id,message.text)
-    except (IndexError, ValueError):
-        bot.send_message(message.from_user.id, "Ошибка при отправке сообщения. Проверьте правильность id пользователя.")
+    admin_id = message.from_user.id
+    connected_ticket = None
 
-# там str кофликтит с int
+    for user_id, ticket in tickets.items():
+        if ticket["admin"] == admin_id and ticket["status"]:
+            connected_ticket = int(user_id)
+            break
+
+    if connected_ticket:
+        bot.send_message(connected_ticket, message.text)
+    else:
+        bot.send_message(connected_ticket,"Вы не подключены ни к одному тикету.")
+
+
+@bot.message_handler(func=lambda message: True)
+def handle_user_message(message):
+    user_id = message.from_user.id
+    username = message.from_user.username or message.from_user.first_name
+    if user_id not in config["admins"]:
+        if str(user_id) not in tickets or not tickets[str(user_id)]["status"]:
+            tickets[str(user_id)] = {"status": True, "admin": None}
+            save_ticket()
+            bot.reply_to(message, "Ваш запрос отправлен. Ожадайте ответа администратора.")
+            for admins in config["admins"]:
+                bot.send_message(admins, f"Открыт новый тикет от {username}\nid: {user_id}.\nЗапрос:{message.text}\nЧтобы подключиться к чату, используйте команду /connect {user_id}")
+        elif tickets[str(user_id)]["admin"] in config["admins"]:
+            connected_admin = tickets[str(user_id)]["admin"]
+            bot.send_message(connected_admin, message.text)
+        else:
+            bot.reply_to(message, "Ожадайте ответа администратора.")
+
 
 bot.infinity_polling()
