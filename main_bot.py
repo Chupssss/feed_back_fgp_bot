@@ -95,7 +95,7 @@ def handle_user_message(message):
             connect_button = InlineKeyboardMarkup()
             connect_button.add(InlineKeyboardButton("Подключиться", callback_data=f"connect_{user_id}"))
             for admins in config["admins"]:
-                bot.send_message(admins, f"Открыт новый тикет от {username}\n\nid: {user_id}.\n\nОбращение:{message.text}\n\n", reply_markup = connect_button)
+                bot.send_message(admins, f"Открыт новый тикет от {username}\n\nid: {user_id}.\n\nОбращение:{message.text}", reply_markup = connect_button)
         elif tickets[str(user_id)]["admin"] in config["admins"]:
             connected_admin = tickets[str(user_id)]["admin"]
             bot.send_message(connected_admin, message.text)
