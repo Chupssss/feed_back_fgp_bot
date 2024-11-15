@@ -90,7 +90,7 @@ def handle_user_message(message):
         if str(user_id) not in tickets or not tickets[str(user_id)]["status"]:
             tickets[str(user_id)] = {"status": True, "admin": None}
             save_ticket()
-            bot.reply_to(message, "Ваш запрос отправлен. Ожадайте ответа администратора.")
+            bot.reply_to(message, "Ваш запрос отправлен! Ожадайте ответа администратора.")
 
             connect_button = InlineKeyboardMarkup()
             connect_button.add(InlineKeyboardButton("Подключиться", callback_data=f"connect_{user_id}"))
